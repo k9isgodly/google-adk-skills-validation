@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReadyNow! — FEMA Emergency Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2236;
+            --bg-input: #0f172a;
+            --accent: #f59e0b;
+            --accent-hover: #fbbf24;
+            --accent-dim: rgba(245, 158, 11, 0.12);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #1e293b;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --agent-bg: #14203a;
+            --user-bg: #1c2d4a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── Header ──────────────────────────────── */
+        header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+
+        .logo-mark {
+            width: 42px;
+            height: 42px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #0a0e17;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .logo-mark::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 12px;
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            animation: pulse-border 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { border-color: rgba(245, 158, 11, 0.15); }
+            50% { border-color: rgba(245, 158, 11, 0.5); }
+        }
+
+        .header-text h1 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+
+        .header-text p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .status-badge {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.72rem;
+            color: var(--success);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* ── Chat Area ───────────────────────────── */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            scroll-behavior: smooth;
+        }
+
+        .chat-container::-webkit-scrollbar { width: 6px; }
+        .chat-container::-webkit-scrollbar-track { background: transparent; }
+        .chat-container::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .message {
+            max-width: 78%;
+            padding: 0.9rem 1.15rem;
+            border-radius: 14px;
+            line-height: 1.6;
+            font-size: 0.92rem;
+            animation: fadeUp 0.3s ease-out;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--user-bg);
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.agent {
+            align-self: flex-start;
+            background: var(--agent-bg);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.agent .label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.4rem;
+        }
+
+        .message.system {
+            align-self: center;
+            background: var(--accent-dim);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            color: var(--accent);
+            font-size: 0.82rem;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        /* Markdown-like formatting in agent messages */
+        .message.agent p { margin-bottom: 0.5rem; }
+        .message.agent p:last-child { margin-bottom: 0; }
+        .message.agent strong, .message.agent b { color: var(--accent); }
+        .message.agent ul, .message.agent ol {
+            margin: 0.4rem 0 0.4rem 1.2rem;
+        }
+        .message.agent li { margin-bottom: 0.25rem; }
+        .message.agent code {
+            font-family: 'IBM Plex Mono', monospace;
+            background: rgba(255,255,255,0.05);
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        /* ── Typing indicator ────────────────────── */
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            padding: 0.9rem 1.15rem;
+            background: var(--agent-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            border-bottom-left-radius: 4px;
+        }
+
+        .typing-indicator.active { display: flex; gap: 5px; align-items: center; }
+
+        .typing-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typing 1.4s ease-in-out infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        /* ── Input Area ──────────────────────────── */
+        .input-area {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 0.75rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        #messageInput {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            color: var(--text-primary);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.92rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #messageInput:focus { border-color: var(--accent); }
+
+        #messageInput::placeholder { color: var(--text-muted); }
+
+        #sendBtn {
+            background: var(--accent);
+            color: #0a0e17;
+            border: none;
+            border-radius: 12px;
+            padding: 0 1.4rem;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+
+        #sendBtn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        #sendBtn:active { transform: translateY(0); }
+        #sendBtn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* ── Quick Actions ────────────────────────── */
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.6rem;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .quick-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.4rem 0.8rem;
+            color: var(--text-secondary);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.76rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        /* ── Footer ──────────────────────────────── */
+        .footer {
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        /* ── Responsive ──────────────────────────── */
+        @media (max-width: 640px) {
+            .message { max-width: 92%; }
+            header { padding: 0.6rem 1rem; }
+            .chat-container { padding: 1rem; }
+            .quick-actions { gap: 0.35rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-mark">⚡</div>
+    <div class="header-text">
+        <h1>ReadyNow!</h1>
+        <p>FEMA Emergency Preparedness Assistant</p>
+    </div>
+    <div class="status-badge">
+        <span class="status-dot"></span>
+        ONLINE
+    </div>
+</header>
+
+<div class="chat-container" id="chatContainer">
+    <div class="message system">
+        ⚡ Welcome to <strong>ReadyNow!</strong> — your AI emergency preparedness assistant.
+        Ask about weather conditions, air quality, evacuation routes, or emergency news.
+    </div>
+</div>
+
+<div class="typing-indicator" id="typingIndicator">
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+</div>
+
+<div class="input-area">
+    <div class="input-wrapper">
+        <input type="text" id="messageInput"
+               placeholder="Ask about weather, air quality, evacuation routes, or emergencies..."
+               autocomplete="off">
+        <button id="sendBtn">Send</button>
+    </div>
+    <div class="quick-actions">
+        <button class="quick-btn" onclick="sendQuick('What\'s the weather in Miami, FL?')">🌤 Miami Weather</button>
+        <button class="quick-btn" onclick="sendQuick('Air quality in Los Angeles, CA')">🌬 LA Air Quality</button>
+        <button class="quick-btn" onclick="sendQuick('Evacuation route from Houston TX to Dallas TX')">🗺 Houston → Dallas</button>
+        <button class="quick-btn" onclick="sendQuick('Latest FEMA emergency declarations')">🚨 FEMA Alerts</button>
+        <button class="quick-btn" onclick="sendQuick('What can you help me with?')">❓ Capabilities</button>
+        <button class="quick-btn" onclick="sendQuick('There\'s a hurricane warning in Houston, TX. I need to evacuate to Dallas, TX. What\'s the current weather in Houston, what\'s the evacuation route to Dallas, and what\'s the air quality like in Dallas right now?')">🚨 Full Emergency Scenario</button>
+    </div>
+</div>
+
+<div class="footer">
+    ReadyNow! Proof of Concept — Powered by Google ADK &amp; Vertex AI Agent Engine
+</div>
+
+<script>
+const chatContainer = document.getElementById('chatContainer');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const typingIndicator = document.getElementById('typingIndicator');
+
+// Generate a persistent user ID for this session
+const userId = 'web-' + Math.random().toString(36).substring(2, 10);
+
+function addMessage(text, type) {
+    const div = document.createElement('div');
+    div.className = `message ${type}`;
+
+    if (type === 'agent') {
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = 'ReadyNow!';
+        div.appendChild(label);
+
+        const content = document.createElement('div');
+        // Basic markdown-to-HTML conversion
+        content.innerHTML = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/⚠️/g, '<strong style="color:#ef4444">⚠️</strong>')
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, '<br>');
+        div.appendChild(content);
+    } else {
+        div.textContent = text;
+    }
+
+    chatContainer.appendChild(div);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+async function sendMessage() {
+    const message = messageInput.value.trim();
+    if (!message) return;
+
+    addMessage(message, 'user');
+    messageInput.value = '';
+    sendBtn.disabled = true;
+    typingIndicator.classList.add('active');
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    try {
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, user_id: userId })
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+            addMessage('Sorry, something went wrong. Please try again.', 'system');
+        } else {
+            addMessage(data.response, 'agent');
+        }
+    } catch (err) {
+        addMessage('Connection error. Please check your network and try again.', 'system');
+    } finally {
+        typingIndicator.classList.remove('active');
+        sendBtn.disabled = false;
+        messageInput.focus();
+    }
+}
+
+function sendQuick(text) {
+    messageInput.value = text;
+    sendMessage();
+}
+
+sendBtn.addEventListener('click', sendMessage);
+messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+messageInput.focus();
+</script>
+
+</body>
+</html>
