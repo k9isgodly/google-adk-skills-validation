@@ -1,0 +1,67 @@
+============================================================
+ReadyNow! Web App — Cloud Run Deployment Instructions
+============================================================
+
+Prerequisites:
+- Challenge 6 notebook has been run and the agent is deployed to Agent Engine
+- You have the Agent Engine Resource Name from the deployment cell output
+- Cloud Shell is open in the GCP Console
+
+============================================================
+Step 1: Upload and extract the web app files
+============================================================
+
+Upload readynow-web.zip to Cloud Shell, then run:
+
+    unzip readynow-web.zip
+    cd readynow-web
+
+============================================================
+Step 2: Set environment variables
+============================================================
+
+    export PROJECT_ID=$(gcloud config get-value project)
+    export LOCATION="us-central1"
+    export AGENT_ENGINE_ID="projects/YOUR_PROJECT_ID/locations/us-central1/reasoningEngines/YOUR_ENGINE_ID"
+
+Replace YOUR_PROJECT_ID and YOUR_ENGINE_ID with your actual values.
+The AGENT_ENGINE_ID is the full Resource Name printed by the Agent Engine
+deployment cell in the Challenge 6 notebook.
+
+============================================================
+Step 3: Deploy to Cloud Run
+============================================================
+
+    gcloud run deploy readynow-web \
+        --source . \
+        --region $LOCATION \
+        --allow-unauthenticated \
+        --set-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=$LOCATION,AGENT_ENGINE_ID=$AGENT_ENGINE_ID" \
+        --memory 512Mi \
+        --timeout 120
+
+Say yes to any API enablement or confirmation prompts.
+
+============================================================
+Step 4: Access the web app
+============================================================
+
+After deployment completes, Cloud Run will print a URL like:
+
+    https://readynow-web-xxxxx-xx.a.run.app
+
+Open that URL in your browser to use the ReadyNow! chat interface.
+
+============================================================
+IAM Notes
+============================================================
+
+The Cloud Run service account (Compute Engine default service account)
+needs the "Vertex AI User" role to call Agent Engine.
+
+The Agent Engine service account (AI Platform Reasoning Engine Service Agent)
+needs:
+- Model Armor User (for input validation)
+- Secret Manager Secret Accessor (if using Secret Manager for API keys)
+
+These can be configured in IAM & Admin > IAM in the GCP Console.
